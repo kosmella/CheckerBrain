@@ -6,12 +6,13 @@
         xmlns:local="clr-namespace:Checkers"
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="534">
-    <Grid Background="#FF00851E">
-        <Button x:Name="EvolveFromScratch" Content="Evolve From Scratch" HorizontalAlignment="Left" Margin="395,6,0,0" VerticalAlignment="Top" Width="116" Click="EvolveFromScratch_Click"/>
-        <Button x:Name="EvolveExisting" Content="Evolve Existing" HorizontalAlignment="Left" Margin="395,30,0,0" VerticalAlignment="Top" Width="116" Click="EvolveExisting_Click"/>
+    <Canvas x:Name="asdf" Background="#FF00851E">
+        <Button x:Name="EvolveFromScratch" Content="Evolve From Scratch" HorizontalAlignment="Left" Margin="395,6,0,0" VerticalAlignment="Top" Width="116" Click="Evolve_Click"/>
+        <Button x:Name="EvolveExisting" Content="Evolve Existing" HorizontalAlignment="Left" Margin="395,30,0,0" VerticalAlignment="Top" Width="116" Click="Evolve_Click"/>
+        <Button x:Name="Step" Content="Next Move" HorizontalAlignment="Left" Margin="10,260,0,0" Click="Step_Click" IsEnabled="False"/>
         <TextBox x:Name="Results" Text="{Binding Path=trainingStats, Mode=OneWay}" HorizontalAlignment="Left" Height="170" Margin="350,80,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="161"/>
-        <Button x:Name="PlayAI" Content="Play against AI" HorizontalAlignment="Left" Margin="395,54,0,0" VerticalAlignment="Top" Width="116"/>
-        <Grid HorizontalAlignment="Left" Height="240" Margin="10,10,0,0" VerticalAlignment="Top" Width="240">
+        <Button x:Name="PlayAI" Content="AI vs AI" HorizontalAlignment="Left" Margin="395,54,0,0" VerticalAlignment="Top" Width="116" Click="PlayAI_Click"/>
+        <Grid x:Name="GameBoard" HorizontalAlignment="Left" Height="240" Margin="10,10,0,0" VerticalAlignment="Top" Width="240">
             <Grid.RowDefinitions>
                 <RowDefinition Height="30"/>
                 <RowDefinition Height="30"/>
@@ -65,41 +66,41 @@
             <Rectangle Fill="White" Grid.Row="5" Grid.Column="7"/>
             <Rectangle Fill="White" Grid.Row="7" Grid.Column="7"/>
 
-            <Rectangle Fill="Gray" Grid.Row="0" Grid.Column="1"/>
-            <Rectangle Fill="Gray" Grid.Row="2" Grid.Column="1"/>
-            <Rectangle Fill="Gray" Grid.Row="4" Grid.Column="1"/>
-            <Rectangle Fill="Gray" Grid.Row="6" Grid.Column="1"/>
-            <Rectangle Fill="Gray" Grid.Row="0" Grid.Column="3"/>
-            <Rectangle Fill="Gray" Grid.Row="2" Grid.Column="3"/>
-            <Rectangle Fill="Gray" Grid.Row="4" Grid.Column="3"/>
-            <Rectangle Fill="Gray" Grid.Row="6" Grid.Column="3"/>
-            <Rectangle Fill="Gray" Grid.Row="0" Grid.Column="5"/>
-            <Rectangle Fill="Gray" Grid.Row="2" Grid.Column="5"/>
-            <Rectangle Fill="Gray" Grid.Row="4" Grid.Column="5"/>
-            <Rectangle Fill="Gray" Grid.Row="6" Grid.Column="5"/>
-            <Rectangle Fill="Gray" Grid.Row="0" Grid.Column="7"/>
-            <Rectangle Fill="Gray" Grid.Row="2" Grid.Column="7"/>
-            <Rectangle Fill="Gray" Grid.Row="4" Grid.Column="7"/>
-            <Rectangle Fill="Gray" Grid.Row="6" Grid.Column="7"/>
-            <Rectangle Fill="Gray" Grid.Row="1" Grid.Column="0"/>
-            <Rectangle Fill="Gray" Grid.Row="3" Grid.Column="0"/>
-            <Rectangle Fill="Gray" Grid.Row="5" Grid.Column="0"/>
-            <Rectangle Fill="Gray" Grid.Row="7" Grid.Column="0"/>
-            <Rectangle Fill="Gray" Grid.Row="1" Grid.Column="2"/>
-            <Rectangle Fill="Gray" Grid.Row="3" Grid.Column="2"/>
-            <Rectangle Fill="Gray" Grid.Row="5" Grid.Column="2"/>
-            <Rectangle Fill="Gray" Grid.Row="7" Grid.Column="2"/>
-            <Rectangle Fill="Gray" Grid.Row="1" Grid.Column="4"/>
-            <Rectangle Fill="Gray" Grid.Row="3" Grid.Column="4"/>
-            <Rectangle Fill="Gray" Grid.Row="5" Grid.Column="4"/>
-            <Rectangle Fill="Gray" Grid.Row="7" Grid.Column="4"/>
-            <Rectangle Fill="Gray" Grid.Row="1" Grid.Column="6"/>
-            <Rectangle Fill="Gray" Grid.Row="3" Grid.Column="6"/>
-            <Rectangle Fill="Gray" Grid.Row="5" Grid.Column="6"/>
-            <Rectangle Fill="Gray" Grid.Row="7" Grid.Column="6"/>
+            <Canvas x:Name="x1y7" Background="Gray" Grid.Row="0" Grid.Column="1" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x1y5" Background="Gray" Grid.Row="2" Grid.Column="1" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x1y3" Background="Gray" Grid.Row="4" Grid.Column="1" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x1y1" Background="Gray" Grid.Row="6" Grid.Column="1" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x3y7" Background="Gray" Grid.Row="0" Grid.Column="3" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x3y5" Background="Gray" Grid.Row="2" Grid.Column="3" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x3y3" Background="Gray" Grid.Row="4" Grid.Column="3" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x3y1" Background="Gray" Grid.Row="6" Grid.Column="3" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x5y7" Background="Gray" Grid.Row="0" Grid.Column="5" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x5y5" Background="Gray" Grid.Row="2" Grid.Column="5" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x5y3" Background="Gray" Grid.Row="4" Grid.Column="5" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x5y1" Background="Gray" Grid.Row="6" Grid.Column="5" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x7y7" Background="Gray" Grid.Row="0" Grid.Column="7" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x7y5" Background="Gray" Grid.Row="2" Grid.Column="7" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x7y3" Background="Gray" Grid.Row="4" Grid.Column="7" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x7y1" Background="Gray" Grid.Row="6" Grid.Column="7" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x0y6" Background="Gray" Grid.Row="1" Grid.Column="0" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x0y4" Background="Gray" Grid.Row="3" Grid.Column="0" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x0y2" Background="Gray" Grid.Row="5" Grid.Column="0" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x0y0" Background="Gray" Grid.Row="7" Grid.Column="0" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x2y6" Background="Gray" Grid.Row="1" Grid.Column="2" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x2y4" Background="Gray" Grid.Row="3" Grid.Column="2" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x2y2" Background="Gray" Grid.Row="5" Grid.Column="2" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x2y0" Background="Gray" Grid.Row="7" Grid.Column="2" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x4y6" Background="Gray" Grid.Row="1" Grid.Column="4" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x4y4" Background="Gray" Grid.Row="3" Grid.Column="4" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x4y2" Background="Gray" Grid.Row="5" Grid.Column="4" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x4y0" Background="Gray" Grid.Row="7" Grid.Column="4" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x6y6" Background="Gray" Grid.Row="1" Grid.Column="6" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x6y4" Background="Gray" Grid.Row="3" Grid.Column="6" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x6y2" Background="Gray" Grid.Row="5" Grid.Column="6" MouseDown="BoardClicked"/>
+            <Canvas x:Name="x6y0" Background="Gray" Grid.Row="7" Grid.Column="6" MouseDown="BoardClicked"/>
             
         </Grid>
         <!--<Image x:Name="image" HorizontalAlignment="Left" Height="240" Margin="10,10,0,0" VerticalAlignment="Top" Width="240" Source="C:\Users\Brandon\Pictures\checkerboard.png"/>-->
 
-    </Grid>
+    </Canvas>
 </Window>

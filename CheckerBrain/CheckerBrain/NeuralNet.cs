@@ -11,7 +11,7 @@ namespace Checkers
     public class NeuralNet
     {
         Layer[] layers;
-        private static readonly int[] defaultConfig = { 32, 64, 10, 1 };
+        private static readonly int[] defaultConfig = { 32, 100, 24, 1 };
         public int numLayers { get { return layers.Length; } }
         public NeuralNet(params int[] layerSizes)
         {
@@ -84,6 +84,7 @@ namespace Checkers
 
         //Initializes a neural net using values in a file
         //Values are loaded in the same order they are printed by the ToString() method
+       
         protected void Load()
         {
             Stream input = null;

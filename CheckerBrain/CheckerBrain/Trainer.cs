@@ -80,11 +80,7 @@ namespace Checkers
                 for (int i = 0; i < trainingInstances; i++)
                 {
                     bracket[i] = simTasks[i].Result;
-                }
-                /*for (int i = 0; i < trainingInstances; i++)
-                {
-                    champion = GetWinnerOfGame(champion, bracket[i]);
-                }*/
+                }             
                 RunBracket(bracket, trainingInstances);
                 challenger = bracket[0];
                 for (int i = 1; i < trainingInstances; i++)
@@ -112,18 +108,7 @@ namespace Checkers
             
         }
         public Player PlayAndEvolve(Player seed, CancellationToken cancel)
-        {
-            /*Player challenger = seed.Reproduce(1);
-            Player winner = seed;
-            for(int i = 0; i < iterationsPerInstance; i++)
-            {
-                if (cancel.IsCancellationRequested)
-                {
-                    return winner;
-                }
-                winner = GetWinnerOfGame(winner, challenger);
-                challenger = winner.Reproduce(i + 1);
-            }*/
+        {            
             Player[] bracket = new Player[bracketSize];
             Player first, second, third;
             first = new Player();
@@ -134,6 +119,8 @@ namespace Checkers
 
             for(int i = 0; i < iterationsPerInstance; i++)
             {
+                if (cancel.IsCancellationRequested)
+                    return first;
                 RunBracket(bracket);
                 GetTop3Players(bracket, out first, out second, out third);
                 bracket = GenerateBracket(first, second, third);

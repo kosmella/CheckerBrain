@@ -65,6 +65,7 @@
     </Compile>
     <Compile Include="Board.cs" />
     <Compile Include="CheckerBrain.cs" />
+    <Compile Include="GameInstance.cs" />
     <Compile Include="NeuralNet.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="Trainer.cs" />

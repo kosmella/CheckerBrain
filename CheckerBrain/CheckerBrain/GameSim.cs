@@ -78,7 +78,7 @@ namespace Checkers
         {
             if(xFrom < 0 || xFrom >= 8 || yFrom < 0 || yFrom >= 8)
             {
-                Console.WriteLine("tried to move piece at {0}, {1}", xFrom, yFrom);
+                throw new InvalidOperationException("attempted to move piece out of bounds");
             }
             if(xTo < 0 || xTo >= 8 || yTo < 0 || yTo >= 8)//proposed move is out of bounds
                 return false;
@@ -91,7 +91,21 @@ namespace Checkers
                 return false;
             return true;
         }
+        public static Board ExecuteMove(Board state, int xFrom, int yFrom, int xTo, int yTo)
+        {
+            if (xTo < 0 || xTo >= 8 || yTo < 0 || yTo >= 8 || xFrom < 0 || xFrom >= 8 || yTo < 0 || yTo >= 8)
+                throw new InvalidOperationException("ExecuteMove method called with out-of-bounds coordinates");
 
+            sbyte[,] layout = state.CloneBoardState();
+            layout[xTo, yTo] = layout[xFrom, yFrom];                    //Move piece to new space
+            layout[xFrom, yFrom] = Board.Empty;                         //Origin space is empty
+            if(Math.Abs(xFrom - xTo) == 2 || Math.Abs(yFrom - yTo) == 2)//piece was captured, make this space empty too
+            {
+                layout[(xFrom + xTo) / 2, (yFrom + yTo) / 2] = Board.Empty;
+            }
+            Board result = new Board(layout);
+            return result;
+        }
         //Recursive method that returns a list of boards representing all the captures that can be made by piece at (xFrom, yFrom)
         //Check if jump is possible in up/right direction
         //If jump possible, create a new board to represent the state after that jump was made, call that statePrime
@@ -107,14 +121,8 @@ namespace Checkers
             Board statePrime;
             if (CaptureIsPossible(state, xFrom, yFrom, xFrom + 2, yFrom + 2))
             {
-                //capture is possibe in up/right direction.  Clone board's state and modify it
-                sbyte[,] layout = state.CloneBoardState();
-
-                //move piece at (xFrom, yFrom) to (xFrom+2, yFrom+2)
-                layout[xFrom + 2, yFrom + 2] = layout[xFrom, yFrom];
-                layout[xFrom + 1, yFrom + 1] = Board.Empty;
-                layout[xFrom, yFrom] = Board.Empty;
-                statePrime = new Board(layout);
+                //capture is possibe in up/right direction.
+                statePrime = ExecuteMove(state, xFrom, yFrom, xFrom+2, yFrom+2);
                 multiCapturesFound = GetCapturesForPiece(statePrime, xFrom + 2, yFrom + 2);
                 if (multiCapturesFound.Count() > 0)
                 {
@@ -124,22 +132,16 @@ namespace Checkers
                 {
                     if (yFrom + 2 == 7)//piece lands on the last row and becomes a king
                     {
-                        layout[xFrom + 2, yFrom + 2] = Board.BlackKing;
-                        statePrime = new Board(layout);
+                        statePrime.MakeKing(xFrom + 2, yFrom + 2);
                     }
                     capturesFound.Add(statePrime);
                 }
             }
             if (CaptureIsPossible(state, xFrom, yFrom, xFrom - 2, yFrom + 2))
             {
-                //capture is possibe in up/left direction.  Clone board's state and modify it
-                sbyte[,] layout = state.CloneBoardState();
-
-                //move piece at (xFrom, yFrom) to (xFrom-2, yFrom+2)
-                layout[xFrom - 2, yFrom + 2] = layout[xFrom, yFrom];
-                layout[xFrom - 1, yFrom + 1] = Board.Empty;
-                layout[xFrom, yFrom] = Board.Empty;
-                statePrime = new Board(layout);
+                //capture is possibe in up/left direction.
+               
+                statePrime = ExecuteMove(state, xFrom, yFrom, xFrom -2, yFrom +2) ;
                 multiCapturesFound = GetCapturesForPiece(statePrime, xFrom - 2, yFrom + 2);
                 if (multiCapturesFound.Count() > 0)
                 {
@@ -149,22 +151,15 @@ namespace Checkers
                 {
                     if (yFrom + 2 == 7)//piece lands on the last row and becomes a king
                     {
-                        layout[xFrom - 2, yFrom + 2] = Board.BlackKing;
-                        statePrime = new Board(layout);
+                        statePrime.MakeKing(xFrom - 2, yFrom + 2);
                     }
                     capturesFound.Add(statePrime);
                 }
             }
             if (CaptureIsPossible(state, xFrom, yFrom, xFrom - 2, yFrom - 2))
             {
-                //capture is possibe in down/left direction.  Clone board's state and modify it
-                sbyte[,] layout = state.CloneBoardState();
-
-                //move piece at (xFrom, yFrom) to (xFrom-2, yFrom-2)
-                layout[xFrom - 2, yFrom - 2] = layout[xFrom, yFrom];
-                layout[xFrom - 1, yFrom - 1] = Board.Empty;
-                layout[xFrom, yFrom] = Board.Empty;
-                statePrime = new Board(layout);
+                //capture is possibe in down/left direction.
+                statePrime = ExecuteMove(state, xFrom, yFrom, xFrom - 2, yFrom - 2);
                 multiCapturesFound = GetCapturesForPiece(statePrime, xFrom - 2, yFrom - 2);
                 if (multiCapturesFound.Count() > 0)
                 {
@@ -177,16 +172,8 @@ namespace Checkers
             }
             if (CaptureIsPossible(state, xFrom, yFrom, xFrom + 2, yFrom - 2))
             {
-                //capture is possibe in down/right direction.  Clone board's state and modify it
-                sbyte[,] layout = state.CloneBoardState();
-
-                //move piece at (xFrom, yFrom) to (xFrom+2, yFrom-2)
-                layout[xFrom + 2, yFrom - 2] = layout[xFrom, yFrom];
-                //piece that got jumped is removed from the board
-                layout[xFrom + 1, yFrom - 1] = Board.Empty;
-                //origin of the piece that made the jump is now empty
-                layout[xFrom, yFrom] = Board.Empty;
-                statePrime = new Board(layout);
+                //capture is possibe in down/right direction.
+                statePrime = ExecuteMove(state, xFrom, yFrom, xFrom +2, yFrom - 2);
                 multiCapturesFound = GetCapturesForPiece(statePrime, xFrom + 2, yFrom - 2);
                 if (multiCapturesFound.Count() > 0)
                 {
@@ -282,6 +269,18 @@ namespace Checkers
                 return Winner.black;
 
             return Winner.noWinner;
+        }
+    }
+    public class MoveSequence
+    {
+        MoveSequence upLeft { set; get; }
+        MoveSequence upRight { set; get; }
+        MoveSequence downLeft { set; get; }
+        MoveSequence downRight { set; get; }
+        Point origin;
+        public MoveSequence(int x, int y)
+        {
+            origin = new Point(x, y);
         }
     }
 }
