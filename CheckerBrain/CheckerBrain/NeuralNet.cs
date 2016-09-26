@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Checkers
@@ -84,7 +80,8 @@ namespace Checkers
 
         //Initializes a neural net using values in a file
         //Values are loaded in the same order they are printed by the ToString() method
-       
+       //Initializes the network with random values if a file is not specified
+       //TODO: modify this method to return a bool representing whether load was successful
         protected void Load()
         {
             Stream input = null;
@@ -133,6 +130,7 @@ namespace Checkers
                     throw new Exception("failed to load from file");
                 }
             }
+            else BuildNetwork(defaultConfig);//User cancelled without loading a file, uses a randomized network instead
         }
         class Layer
         {
@@ -152,12 +150,12 @@ namespace Checkers
 
                 //randomize all synaptic weights
                 Random rand = new Random();
-                float nextWeight;
+                //float nextWeight;
                 for (int i = 0; i < inputs; i++)
                 {
                     for (int j = 0; j < outputs; j++)
                     {
-                        nextWeight = ((float)rand.NextDouble() * maxWeight * 2) - maxWeight; //formuala for random # between maxWeight and -maxWeight
+                        synapses[i, j] = ((float)rand.NextDouble() * maxWeight * 2) - maxWeight; //formuala for random # between maxWeight and -maxWeight
                     }
 
                 }
@@ -255,8 +253,6 @@ namespace Checkers
                         reply += (synapses[i, j] + Environment.NewLine);
                 return reply;
             }
-
-
         }
     }
 }

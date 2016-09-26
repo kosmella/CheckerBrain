@@ -98,9 +98,7 @@
             <Canvas x:Name="x6y4" Background="Gray" Grid.Row="3" Grid.Column="6" MouseDown="BoardClicked"/>
             <Canvas x:Name="x6y2" Background="Gray" Grid.Row="5" Grid.Column="6" MouseDown="BoardClicked"/>
             <Canvas x:Name="x6y0" Background="Gray" Grid.Row="7" Grid.Column="6" MouseDown="BoardClicked"/>
-            
-        </Grid>
-        <!--<Image x:Name="image" HorizontalAlignment="Left" Height="240" Margin="10,10,0,0" VerticalAlignment="Top" Width="240" Source="C:\Users\Brandon\Pictures\checkerboard.png"/>-->
 
+        </Grid>
     </Canvas>
 </Window>

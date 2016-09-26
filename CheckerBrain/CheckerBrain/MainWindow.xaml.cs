@@ -1,17 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
@@ -20,7 +14,7 @@ namespace Checkers
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    
+
     public partial class MainWindow : Window
     {
         Trainer myTrainer;
@@ -56,7 +50,6 @@ namespace Checkers
                 ProgramState = state.TrainerStopping;
                 cancelAfterGeneration.Cancel();
                 EvolveFromScratch.Content = "Stop Immediately";
-                Results.Text += "\nStopping after generation";
                 return;
             }
             else if (ProgramState == state.TrainerStopping)
@@ -81,22 +74,21 @@ namespace Checkers
             Player seed = new Player(loadFile);
             Task.Run(() => myTrainer.Train(cancelNow.Token, cancelAfterGeneration.Token, seed));
             EvolveExisting.IsEnabled = false;
-            Results.Text = "Trainer starting...";
+            PlayAI.IsEnabled = false;
             return;
         }
         private void TrainingFinished()
         {
             champion = myTrainer.champion;
             champion.Save();
-            Results.Text = myTrainer.trainingStats;
             EvolveFromScratch.Content = "Evolve From Scratch";
             EvolveExisting.Content = "Evolve Existing";
             EvolveExisting.IsEnabled = true;
             EvolveFromScratch.IsEnabled = true;
+            PlayAI.IsEnabled = true;
             ProgramState = state.Idle;
         }
 
-        
 
         private void PlayAI_Click(object sender, RoutedEventArgs e)
         {
@@ -105,13 +97,18 @@ namespace Checkers
                 InitializeAIGame();
                 ProgramState = state.AIvsAI;
                 Step.IsEnabled = true;
+                Step.Content = "Next Move";
+                EvolveFromScratch.IsEnabled = false;
+                EvolveExisting.IsEnabled = false;
                 PlayAI.Content = "Abort Game";
                 return;
             }
             else if (ProgramState == state.AIvsAI)
             {
+                EvolveFromScratch.IsEnabled = true;
+                EvolveExisting.IsEnabled = true;
                 ProgramState = state.Idle;
-                PlayAI.Content = "Play AI";
+                PlayAI.Content = "AI vs AI";
                 Step.IsEnabled = false;
             }
         }
@@ -173,32 +170,16 @@ namespace Checkers
             {
                 for(int j=0; j<8; j++)
                 {
-                    
                         location = new Point(i, j);
                         Canvas rectangleFound = BoardUI.Where(r => r.Value.Equals(location)).Select(r => r.Key).FirstOrDefault();
-                        //rectangleFound.Children.Add(GetPieceGraphic(b.GetPieceAt(i, j)));
-                        DrawBoardSpace(rectangleFound, b.GetPieceAt(i, j));
-                    
+                        DrawBoardSpace(rectangleFound, b.GetPieceAt(i, j));   
                 }
             }
         }
 
         private void BoardClicked(object sender, MouseButtonEventArgs e)
         {
-            /*if(BoardUI == null)
-                InitializeBoardUI();
-            Canvas spaceClicked = sender as Canvas;
-            if (spaceClicked == null)
-                return;
-            Point pointClicked = BoardUI[spaceClicked];
-            Results.Text = String.Format("{0}, {1}", pointClicked.x, pointClicked.y);
-            if(spaceClicked.Children.Count == 0)
-                spaceClicked.Children.Add(GetPieceGraphic(Board.Red));
-            else
-            {
-                spaceClicked.Children.Clear();
-            }
-            */
+            
         }
 
         private void DrawBoardSpace(Canvas space, sbyte pieceType)
@@ -236,17 +217,21 @@ namespace Checkers
             DrawBoard(currentGame.boardState);
             if(currentGame.GetWinner() == Winner.black)
             {
-                Results.Text = "Black wins";
+                Step.Content = "Black wins!";
+                PlayAI.Content = "AI vs AI";
+                EvolveExisting.IsEnabled = true;
+                EvolveFromScratch.IsEnabled = true;
                 ProgramState = state.Idle;
-                PlayAI.Content = "Play AI";
                 Step.IsEnabled = false;
             }
             else if(currentGame.GetWinner() == Winner.red)
             {
-                    Results.Text = "Red wins";
-                    ProgramState = state.Idle;
-                    PlayAI.Content = "Play AI";
-                    Step.IsEnabled = false;
+                Step.Content = "Red wins!";
+                PlayAI.Content = "AI vs AI";
+                EvolveExisting.IsEnabled = true;
+                EvolveFromScratch.IsEnabled = true;
+                ProgramState = state.Idle;
+                Step.IsEnabled = false;
                 
             }
         }

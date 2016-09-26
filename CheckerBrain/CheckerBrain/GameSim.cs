@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Checkers
 {
@@ -34,11 +32,12 @@ namespace Checkers
 
             return nextMove;
         }
+
+        //Gets all possible moves for the black player.
         public static List<Board> GetPossibleMoves(Board currentState)
         {
             //if a capture is possible, a player MUST take it.
             List<Board> moves = new List<Board>(); 
-            
             for(int i = 0; i < 8; i++)
             {
                 for(int j = 0; j < 8; j++)
@@ -48,11 +47,8 @@ namespace Checkers
                     {
                         moves.AddRange(GetCapturesForPiece(currentState, i, j));
                     }
-                        
-
                 }
             }
-            
             if(moves.Count()>0) //captures possible, so return ONLY those
                 return moves;
 
@@ -66,8 +62,6 @@ namespace Checkers
                     {
                         moves.AddRange(GetMovesForPiece(currentState, i, j));
                     }
-
-
                 }
             }
             return moves;
@@ -91,6 +85,8 @@ namespace Checkers
                 return false;
             return true;
         }
+
+        //Moves piece at (xFrom, yFrom) to (xTo, yTo) and returns a board representing the new state
         public static Board ExecuteMove(Board state, int xFrom, int yFrom, int xTo, int yTo)
         {
             if (xTo < 0 || xTo >= 8 || yTo < 0 || yTo >= 8 || xFrom < 0 || xFrom >= 8 || yTo < 0 || yTo >= 8)
@@ -106,6 +102,7 @@ namespace Checkers
             Board result = new Board(layout);
             return result;
         }
+
         //Recursive method that returns a list of boards representing all the captures that can be made by piece at (xFrom, yFrom)
         //Check if jump is possible in up/right direction
         //If jump possible, create a new board to represent the state after that jump was made, call that statePrime
@@ -247,6 +244,8 @@ namespace Checkers
             }
             return movesFound;
         }
+
+        //Checks if this board has a winner
         public static Winner GetWinner(Board b)
         {
             bool blackFound = false;
@@ -271,6 +270,8 @@ namespace Checkers
             return Winner.noWinner;
         }
     }
+
+    // This will be used to represent a candidate move by a human player.
     public class MoveSequence
     {
         MoveSequence upLeft { set; get; }
