@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Checkers
 {
@@ -17,7 +13,8 @@ namespace Checkers
         public Board boardState { get
             {
                 return _boardState;
-            } }
+            }
+        }
         private Board _boardState;
         public GameInstance(Player opponent)
         {
@@ -36,6 +33,7 @@ namespace Checkers
             _boardState = new Board();
         }
 
+        //Each time this method is called causes the AI whose turn it is to choose a move.
         public void AIMove()
         {
             if (blackTurn && !AIvsAI)

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.IO;
 using System.Windows.Forms;
 
 namespace Checkers
@@ -27,6 +22,7 @@ namespace Checkers
         {
             myBrain = brain;
             winCount = 0;
+            lossCount = 0;
             gamesPlayed = 0;
         }
         public Player Reproduce(int mutationRate)
@@ -34,11 +30,6 @@ namespace Checkers
             Player child = new Player(new CheckerBrain(myBrain));
             if (mutationRate > 0)
                 child.myBrain.Mutate(mutationRate);
-            else {
-                child.winCount = this.winCount;
-                child.lossCount = this.lossCount;
-                child.gamesPlayed = this.gamesPlayed;
-            }
             return child;
         }
 
@@ -58,6 +49,7 @@ namespace Checkers
             lossCount++;
         }
         
+        //Saves the state of the neural network to a file.
         public void Save()
         {
             SaveFileDialog sf = new SaveFileDialog();

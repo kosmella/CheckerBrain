@@ -1,46 +1,31 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
-using System.Windows.Forms;
-using System.IO;
+using System.Runtime.CompilerServices;
 
 namespace Checkers
 {
     public class Trainer:INotifyPropertyChanged
-    {
-        public Player champion;
-        const int trainingInstances = 10;
-        const int iterationsPerInstance = 10;
-        const int bracketSize = 15;
+    {   
+        const int trainingTasks = 10;
+        const int iterationsPerTask = 10;
+        const int playersPerBracket = 15;
         const int mutationRate = 10;
-        private int _generations;
+
+        private string _trainingStats, trainerStatus;
         private int _gamesPlayed;
-        private string _trainingStats;
-        private int _winRecord;
         public event PropertyChangedEventHandler PropertyChanged;
         public delegate void NotifyTrainingFinished();
         public event NotifyTrainingFinished TrainingFinished;
         Dispatcher UI;
-        public int generations
-        {
-            get
-            {
-                return _generations;
-            }
-        }
-        public int gamesPlayed
-        {
-            get
-            {
-                return _gamesPlayed;
-            }
-        }
-        public string trainingStats
+        public Player champion { get; private set; }
+        public int generations { get; private set; }
+        public int winRecord { get; private set; }
+        public int generationsSinceNewChampion { get; private set; }
+
+        public string trainingStats //data binding path for UI's status window
         {
             get
             {
@@ -54,70 +39,120 @@ namespace Checkers
         }
         public Trainer(Dispatcher UIThreadDispatcher)
         {
-            champion = new Player();
-            _trainingStats = "Idle";
-            _generations = 0;
-            _gamesPlayed = 0;
-            _winRecord = 0;
-            UI = UIThreadDispatcher;
-            
+            trainerStatus = "Idle";   
+            UI = UIThreadDispatcher;  //used to call TrainingFinished method on UI thread
         }
 
-        public void Train(CancellationToken cancelNow, CancellationToken cancelAfterGeneration, Player evolveFrom)
+        /* Training algorithm
+         *
+         * Algorithm works as follows:
+         * several tasks run the PlayAndEvolve method (# tasks = trainingTasks)
+         * PlayAndEvolve takes a seed player, fills an array (size = playersPerBracket) with mutated copies of the seed,
+         * and has every player play all the others.  The top 3 are used as seeds for the next iteration.  This process
+         * is repeated iterationsPerTask times, and then the top player is returned as the result of the task.
+         * Once every training task completes, each player plays all the others, and the one with the most wins
+         * becomes the challenger.  The challenger plays the existing champion and, if it wins, becomes the
+         * new champion.
+         * The process is repeated in an infinite loop 
+         *
+         * cancelAfterGeneration waits for all tasks in simTasks to complete and then computes the champion
+         * cancelNow causes all the simTasks to abort before completing all their iterations
+         */
+        public void Train(CancellationToken cancelNow, CancellationToken cancelAfterGeneration, Player seed)
         {
-            champion = evolveFrom;
+            generationsSinceNewChampion = 0;
+            generations = 0;
+            _gamesPlayed = 0;
+            winRecord = 0;
+            champion = seed;
             Player challenger;
-           Task<Player>[] simTasks = new Task<Player>[trainingInstances];
-           Player[] bracket = new Player[trainingInstances];
-           while (true)
+            Task notifier = Task.Factory.StartNew(() => UpdateStats(cancelAfterGeneration)); //this task updates the trainingStats property at fixed intervals
+            Task<Player>[] simTasks = new Task<Player>[trainingTasks];
+            Player[] bracket = new Player[trainingTasks];
+            trainerStatus = "Running. . .";
+
+            //first element is seeded with the champion, the remaining are seeded with mutations of the champion
+            simTasks[0] = Task<Player>.Factory.StartNew(() => PlayAndEvolve(champion, cancelAfterGeneration));
+            for (int i = 1; i < trainingTasks; i++)
             {
-                simTasks[0] = Task<Player>.Factory.StartNew(() => PlayAndEvolve(champion, cancelNow));
-                for (int i = 1; i < trainingInstances; i++)
-                {
-                    simTasks[i] = Task<Player>.Factory.StartNew(() => PlayAndEvolve(champion.Reproduce(i+1), cancelNow));
-                }
-                
-                for (int i = 0; i < trainingInstances; i++)
+                simTasks[i] = Task<Player>.Factory.StartNew(() => PlayAndEvolve(champion.Reproduce(i + 1), cancelNow));
+            }
+            while (true)
+            {
+                /*The main training loop works as follows
+                 * Wait for all PlayAndEvolve tasks to complete.
+                 * Create a new bracket with the result of each task.
+                 * Call RunBracket method to have each of them play all the others
+                 * Have the top player from that bracket play against the reigning champion,
+                 * and make it the new champion if it wins.
+                 * If cancellation token was cancelled, end the training loop.
+                 * Else, begin new generation of PlayAndEvolve tasks with the results of the prior generation.
+                 */
+                Task.WaitAll(simTasks); 
+                for (int i = 0; i < trainingTasks; i++)
                 {
                     bracket[i] = simTasks[i].Result;
                 }             
-                RunBracket(bracket, trainingInstances);
-                challenger = bracket[0];
-                for (int i = 1; i < trainingInstances; i++)
+                RunBracket(bracket, trainingTasks);
+                challenger = GetTopPlayer(bracket);
+                champion = GetWinnerOfGame(challenger, champion);
+                generations++;
+                if (champion != challenger) generationsSinceNewChampion = 0;
+                else
                 {
-                    if(bracket[i].GetWinPercentage() > challenger.GetWinPercentage())
-                    {
-                        challenger = bracket[i];
-                    }
+                    generationsSinceNewChampion++;
+                    if (generationsSinceNewChampion > winRecord) winRecord = generationsSinceNewChampion;
                 }
-                champion = GetWinnerOfGame(champion, challenger);
-                _generations++;
-                if (champion.winCount > _winRecord)
-                    _winRecord = champion.winCount;
-                trainingStats = String.Format("Running . . .\nGeneration: {0}\nGames Played: {1}\nWinner for {2} Games\nRecord streak is {3} wins",
-                    generations, gamesPlayed, champion.winCount, _winRecord);
-                
-                
-                if(cancelAfterGeneration.IsCancellationRequested)
+                if (cancelAfterGeneration.IsCancellationRequested)
                 {
-                    trainingStats = String.Format("{0} Generations\n{1} Games Played\nWinner for {2} Games", generations, gamesPlayed, champion.winCount);
+                    trainerStatus = "Finished";
+                    trainingStats = String.Format("{0}\nGeneration: {1}\nGames Played: {2}\nChamp for {3} generations\nRecord is {4} generations",
+                    trainerStatus, generations, _gamesPlayed, generationsSinceNewChampion, winRecord);
                     UI.Invoke(TrainingFinished);
                     return;
                 }
+                for (int i = 0; i < trainingTasks; i++)
+                {
+                    Player p = bracket[i].Reproduce(0);
+                    simTasks[i] = Task<Player>.Factory.StartNew(() => PlayAndEvolve(p, cancelNow));
+                }
             }
-            
         }
+
+        //Updates the trainingStats string at fixed intervals (default = 1000 ms)
+        //terminates when cancel token is cancelled
+        private void UpdateStats(CancellationToken cancel, int tickRateInMilliseconds = 1000)
+        {
+            while (true)
+            {
+                if (cancel.IsCancellationRequested)
+                {
+                    trainerStatus = "Finishing generation. . .";
+                }
+                if (trainerStatus == "Finished")
+                    return;
+
+                trainingStats = String.Format("{0}\nGeneration: {1}\nGames Played: {2}\nChamp for {3} generations\nRecord is {4} generations",
+                    trainerStatus, generations, _gamesPlayed, generationsSinceNewChampion, winRecord);
+                Thread.Sleep(tickRateInMilliseconds);
+            }
+        }
+
+        /*creates a bracket of players, has them each play all the others, and
+         * creates a new bracket seeded by the top 3.  Repeats iterationsPerTask times.
+        */
         public Player PlayAndEvolve(Player seed, CancellationToken cancel)
-        {            
-            Player[] bracket = new Player[bracketSize];
+        {
+            Thread.CurrentThread.Priority = ThreadPriority.Lowest;         
+            Player[] bracket = new Player[playersPerBracket];
             Player first, second, third;
-            first = new Player();
-            for(int i = 0; i < bracketSize; i++)
+            first = seed;
+            bracket[0] = seed;
+            for(int i = 1; i < playersPerBracket; i++)
             {
                 bracket[i] = seed.Reproduce(mutationRate);
             }
-
-            for(int i = 0; i < iterationsPerInstance; i++)
+            for(int i = 0; i < iterationsPerTask; i++)
             {
                 if (cancel.IsCancellationRequested)
                     return first;
@@ -125,8 +160,6 @@ namespace Checkers
                 GetTop3Players(bracket, out first, out second, out third);
                 bracket = GenerateBracket(first, second, third);
             }
-
-
             return first;
         }
 
@@ -138,12 +171,12 @@ namespace Checkers
         */
         private Player[] GenerateBracket(Player first, Player second, Player third)
         {
-            Player[] bracket = new Player[bracketSize];
+            Player[] bracket = new Player[playersPerBracket];
             int playersGenerated = 0;
-            int firstChildren = (int)(bracketSize * .5);//50% descendents derived from first
-            int secondChildren = (int)(bracketSize * .3);//30% from second
-            int thirdChildren = (int)(bracketSize * .2);//20% from third
-            int remainder = bracketSize - (firstChildren + secondChildren + thirdChildren);
+            int firstChildren = (int)(playersPerBracket * .5);//50% descendents derived from first
+            int secondChildren = (int)(playersPerBracket * .3);//30% from second
+            int thirdChildren = (int)(playersPerBracket * .2);//20% from third
+            int remainder = playersPerBracket - (firstChildren + secondChildren + thirdChildren);
 
             firstChildren += remainder;//any remaining slots filled with descendents of first
 
@@ -166,6 +199,20 @@ namespace Checkers
                 playersGenerated++;
             }
             return bracket;
+        }
+        
+        //Returns the player with the best win percentage
+        private Player GetTopPlayer(Player[] players)
+        {
+            Player top = players[0];
+            foreach(Player p in players)
+            {
+                if(p.GetWinPercentage() > top.GetWinPercentage())
+                {
+                    top = p;
+                }
+            }
+            return top;
         }
 
         //returns the top 3 players by win percentage
@@ -196,7 +243,7 @@ namespace Checkers
             else
                 third = bracket[2];
 
-            for(int i = 3; i < bracketSize; i++)
+            for(int i = 3; i < playersPerBracket; i++)
             {
                 if(bracket[i].GetWinPercentage() > first.GetWinPercentage())//new first place found
                 {
@@ -216,7 +263,8 @@ namespace Checkers
             }
         }
 
-        private void RunBracket(Player[] bracket, int size = bracketSize)
+        //Makes each player in bracket play all the others
+        private void RunBracket(Player[] bracket, int size = playersPerBracket)
         {
             for(int i=0; i < size; i++)
             {
@@ -227,6 +275,7 @@ namespace Checkers
             }
         }
 
+        
         public Player GetWinnerOfGame(Player redPlayer, Player blackPlayer)
         {
             Winner w;
@@ -259,12 +308,9 @@ namespace Checkers
                 return redPlayer;
             }
         }
-        private void NotifyPropertyChanged(String info)
+        private void NotifyPropertyChanged([CallerMemberName] String info ="")
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(info));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(info));
         }
 
     }

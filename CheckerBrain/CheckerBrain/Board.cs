@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Checkers
+﻿namespace Checkers
 {
     struct Point
     {   
@@ -101,6 +95,7 @@ namespace Checkers
         {
             return boardState[x, y];
         }
+
         public string toString()
         {
             string s = "";
@@ -114,6 +109,8 @@ namespace Checkers
             }
             return s;
         }
+
+        //Tests to see if game has a winner yet
         public Winner GetWinner()
         {
             bool blackFound = false;
@@ -137,7 +134,8 @@ namespace Checkers
 
             return Winner.noWinner;
         }
-       
+        
+        //Makes a piece into a king if it reached opponent's back row
         public void MakeKing(int x, int y)
         {
             if ((y == 7) && boardState[x, y] == Black)

@@ -42,8 +42,8 @@ namespace BrainTest
             Console.WriteLine(b.toString());*/
 
            
-            Trainer t = new Trainer();
-            t.Train();
+            //Trainer t = new Trainer();
+            //t.Train();
             
             //Console.ReadKey();
         }
